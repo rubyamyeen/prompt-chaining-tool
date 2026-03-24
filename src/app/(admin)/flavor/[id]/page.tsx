@@ -1,5 +1,4 @@
 import { createClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import HumorFlavorStepsManager from "./HumorFlavorStepsManager";
 
@@ -9,54 +8,152 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
+interface LookupOption {
+  id: number;
+  name: string;
+}
+
+interface Lookups {
+  llmModels: LookupOption[];
+  llmInputTypes: LookupOption[];
+  llmOutputTypes: LookupOption[];
+  humorFlavorStepTypes: LookupOption[];
+}
+
+interface StepWithRelations {
+  id: number;
+  humor_flavor_id: number;
+  order_by: number;
+  llm_temperature: number | null;
+  llm_input_type_id: number;
+  llm_output_type_id: number;
+  llm_model_id: number;
+  humor_flavor_step_type_id: number;
+  llm_system_prompt: string | null;
+  llm_user_prompt: string | null;
+  description: string | null;
+  llm_models: { id: number; name: string } | null;
+  llm_input_types: { id: number; name: string } | null;
+  llm_output_types: { id: number; name: string } | null;
+  humor_flavor_step_types: { id: number; name: string } | null;
+}
+
 export default async function FlavorDetailPage({ params }: PageProps) {
   const { id } = await params;
   const flavorId = parseInt(id, 10);
 
   if (isNaN(flavorId)) {
-    notFound();
+    return (
+      <div className="space-y-6">
+        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+          &larr; Back to Flavors
+        </Link>
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+          <h1 className="text-red-700 dark:text-red-400 font-bold">Invalid Flavor ID</h1>
+          <p className="text-red-600 dark:text-red-300 text-sm mt-1">The ID &quot;{id}&quot; is not a valid number.</p>
+        </div>
+      </div>
+    );
   }
 
-  const supabase = await createClient();
-
-  // Fetch flavor
-  const { data: flavor, error: flavorError } = await supabase
-    .from("humor_flavors")
-    .select("*")
-    .eq("id", flavorId)
-    .single();
-
-  if (flavorError || !flavor) {
-    notFound();
-  }
-
-  // Fetch steps with related data
-  const { data: steps, error: stepsError } = await supabase
-    .from("humor_flavor_steps")
-    .select(`
-      *,
-      llm_models(id, name),
-      llm_input_types(id, name),
-      llm_output_types(id, name),
-      humor_flavor_step_types(id, name)
-    `)
-    .eq("humor_flavor_id", flavorId)
-    .order("order_by", { ascending: true });
-
-  // Fetch lookup data
-  const [modelsResult, inputTypesResult, outputTypesResult, stepTypesResult] = await Promise.all([
-    supabase.from("llm_models").select("id, name").order("name"),
-    supabase.from("llm_input_types").select("id, name").order("name"),
-    supabase.from("llm_output_types").select("id, name").order("name"),
-    supabase.from("humor_flavor_step_types").select("id, name").order("name"),
-  ]);
-
-  const lookups = {
-    llmModels: modelsResult.data ?? [],
-    llmInputTypes: inputTypesResult.data ?? [],
-    llmOutputTypes: outputTypesResult.data ?? [],
-    humorFlavorStepTypes: stepTypesResult.data ?? [],
+  let flavor: { id: number; slug: string; description: string | null } | null = null;
+  let steps: StepWithRelations[] = [];
+  let lookups: Lookups = {
+    llmModels: [],
+    llmInputTypes: [],
+    llmOutputTypes: [],
+    humorFlavorStepTypes: [],
   };
+  let errorMessage: string | null = null;
+  let stepsErrorMessage: string | null = null;
+
+  try {
+    const supabase = await createClient();
+
+    // Fetch flavor
+    const { data: flavorData, error: flavorError } = await supabase
+      .from("humor_flavors")
+      .select("id, slug, description")
+      .eq("id", flavorId)
+      .single();
+
+    if (flavorError) {
+      console.error("[FlavorDetailPage] Flavor query error:", JSON.stringify(flavorError, null, 2));
+      errorMessage = `Failed to load flavor: ${flavorError.message}`;
+    } else if (!flavorData) {
+      errorMessage = `Flavor with ID ${flavorId} not found`;
+    } else {
+      flavor = flavorData;
+
+      // Fetch steps with related data
+      const { data: stepsData, error: stepsError } = await supabase
+        .from("humor_flavor_steps")
+        .select(`
+          *,
+          llm_models(id, name),
+          llm_input_types(id, name),
+          llm_output_types(id, name),
+          humor_flavor_step_types(id, name)
+        `)
+        .eq("humor_flavor_id", flavorId)
+        .order("order_by", { ascending: true });
+
+      if (stepsError) {
+        console.error("[FlavorDetailPage] Steps query error:", JSON.stringify(stepsError, null, 2));
+        stepsErrorMessage = stepsError.message;
+      } else {
+        steps = (stepsData as StepWithRelations[]) ?? [];
+      }
+
+      // Fetch lookup data
+      const [modelsResult, inputTypesResult, outputTypesResult, stepTypesResult] = await Promise.all([
+        supabase.from("llm_models").select("id, name").order("name"),
+        supabase.from("llm_input_types").select("id, name").order("name"),
+        supabase.from("llm_output_types").select("id, name").order("name"),
+        supabase.from("humor_flavor_step_types").select("id, name").order("name"),
+      ]);
+
+      if (modelsResult.error) {
+        console.error("[FlavorDetailPage] Models lookup error:", JSON.stringify(modelsResult.error, null, 2));
+      }
+      if (inputTypesResult.error) {
+        console.error("[FlavorDetailPage] Input types lookup error:", JSON.stringify(inputTypesResult.error, null, 2));
+      }
+      if (outputTypesResult.error) {
+        console.error("[FlavorDetailPage] Output types lookup error:", JSON.stringify(outputTypesResult.error, null, 2));
+      }
+      if (stepTypesResult.error) {
+        console.error("[FlavorDetailPage] Step types lookup error:", JSON.stringify(stepTypesResult.error, null, 2));
+      }
+
+      lookups = {
+        llmModels: modelsResult.data ?? [],
+        llmInputTypes: inputTypesResult.data ?? [],
+        llmOutputTypes: outputTypesResult.data ?? [],
+        humorFlavorStepTypes: stepTypesResult.data ?? [],
+      };
+    }
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : "";
+    console.error("[FlavorDetailPage] Exception:", msg);
+    console.error("[FlavorDetailPage] Stack:", stack);
+    errorMessage = msg;
+  }
+
+  if (errorMessage || !flavor) {
+    return (
+      <div className="space-y-6">
+        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
+          &larr; Back to Flavors
+        </Link>
+        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
+          <h1 className="text-red-700 dark:text-red-400 font-bold">Error Loading Flavor</h1>
+          <p className="text-red-600 dark:text-red-300 text-sm mt-1">{errorMessage ?? "Flavor not found"}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -89,20 +186,20 @@ export default async function FlavorDetailPage({ params }: PageProps) {
             Steps
           </h2>
           <span className="text-sm text-gray-500 dark:text-gray-400">
-            {steps?.length ?? 0} step{(steps?.length ?? 0) !== 1 ? "s" : ""}
+            {steps.length} step{steps.length !== 1 ? "s" : ""}
           </span>
         </div>
 
-        {stepsError && (
+        {stepsErrorMessage && (
           <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
             <p className="text-red-700 dark:text-red-400 font-medium">Failed to load steps</p>
-            <p className="text-red-600 dark:text-red-300 text-sm mt-1">{stepsError.message}</p>
+            <p className="text-red-600 dark:text-red-300 text-sm mt-1">{stepsErrorMessage}</p>
           </div>
         )}
 
         <HumorFlavorStepsManager
           humorFlavorId={flavorId}
-          initialSteps={steps ?? []}
+          initialSteps={steps}
           lookups={lookups}
         />
       </div>
