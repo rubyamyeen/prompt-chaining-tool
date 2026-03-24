@@ -27,7 +27,6 @@ async function requireAuthWithSession() {
 
 /**
  * Makes an authenticated API call to the AlmostCrackd pipeline.
- * Returns the raw response for debugging.
  */
 async function apiCall<T = unknown>(
   endpoint: string,
@@ -35,14 +34,10 @@ async function apiCall<T = unknown>(
   options: {
     method?: string;
     body?: unknown;
-    headers?: Record<string, string>;
   } = {}
-): Promise<{ data?: T; error?: string; rawResponse?: string; status?: number }> {
-  const { method = "POST", body, headers = {} } = options;
-
+): Promise<{ data?: T; error?: string }> {
+  const { method = "POST", body } = options;
   const url = `${API_BASE_URL}${endpoint}`;
-  console.log(`[API] ${method} ${url}`);
-  console.log(`[API] Request body:`, JSON.stringify(body, null, 2));
 
   try {
     const response = await fetch(url, {
@@ -50,56 +45,58 @@ async function apiCall<T = unknown>(
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Bearer ${accessToken}`,
-        ...headers,
       },
       body: body ? JSON.stringify(body) : undefined,
     });
 
     const rawText = await response.text();
-    console.log(`[API] ${endpoint} status:`, response.status);
-    console.log(`[API] ${endpoint} raw response:`, rawText);
 
     if (!response.ok) {
-      return {
-        error: `API error (${response.status}): ${rawText}`,
-        rawResponse: rawText,
-        status: response.status,
-      };
+      return { error: `API error (${response.status}): ${rawText}` };
     }
 
-    // Try to parse as JSON
-    let data: T;
     try {
-      data = JSON.parse(rawText);
-      console.log(`[API] ${endpoint} parsed JSON:`, JSON.stringify(data, null, 2));
+      const data = JSON.parse(rawText);
+      return { data };
     } catch {
-      console.log(`[API] ${endpoint} response is not JSON`);
-      return { data: rawText as T, rawResponse: rawText, status: response.status };
+      return { data: rawText as T };
     }
-
-    return { data, rawResponse: rawText, status: response.status };
   } catch (err) {
-    console.error(`[API] ${endpoint} exception:`, err);
     return { error: err instanceof Error ? err.message : "API call failed" };
   }
 }
 
+/**
+ * Caption record returned by the generate-captions API.
+ */
+export interface CaptionRecord {
+  id: string;
+  content: string;
+  image_id: string;
+  humor_flavor_id: number;
+  is_public?: boolean;
+  is_featured?: boolean;
+  like_count?: number;
+  created_datetime_utc?: string;
+}
+
 export interface CaptionGenerationResult {
-  caption: string;
-  captions?: string[];
-  imageId?: string;
-  humorFlavorId?: number;
-  humorFlavorSlug?: string;
-  // Raw response for debugging
-  rawApiResponse?: unknown;
-  debugInfo?: {
-    uploadImageResponse?: unknown;
-    generateCaptionsResponse?: unknown;
-  };
+  captions: CaptionRecord[];
+  primaryCaption: string;
+  imageId: string;
+  humorFlavorId: number;
+  humorFlavorSlug: string;
 }
 
 /**
  * Generates captions for an image using a specific humor flavor.
+ *
+ * Pipeline flow:
+ * 1. POST /pipeline/upload-image-from-url - Register the image URL
+ * 2. POST /pipeline/generate-captions - Generate captions
+ *
+ * The generate-captions API returns an array of caption records:
+ * [{ id, content, image_id, humor_flavor_id, ... }]
  */
 export async function generateCaptionsForFlavor({
   imageId,
@@ -137,15 +134,10 @@ export async function generateCaptionsForFlavor({
       return { error: `Humor flavor not found: ${flavorError?.message ?? "Unknown error"}` };
     }
 
-    console.log("[CaptionGeneration] Using humor flavor:", flavor.slug, "(ID:", humorFlavorId, ")");
-    console.log("[CaptionGeneration] Image URL:", image.url);
-
     // ============================================================
     // PIPELINE STEP 1: Register the image URL
     // ============================================================
-    console.log("[CaptionGeneration] Step 1: Registering image URL...");
-
-    const uploadResult = await apiCall<unknown>(
+    const uploadResult = await apiCall<{ imageId?: string; image_id?: string; id?: string }>(
       "/pipeline/upload-image-from-url",
       accessToken,
       {
@@ -156,117 +148,56 @@ export async function generateCaptionsForFlavor({
       }
     );
 
-    console.log("[CaptionGeneration] Step 1 full response:", uploadResult);
-
     if (uploadResult.error) {
-      return {
-        error: `Failed to register image: ${uploadResult.error}`,
-        data: {
-          caption: "",
-          rawApiResponse: uploadResult.rawResponse,
-          debugInfo: { uploadImageResponse: uploadResult },
-        }
-      };
+      return { error: `Failed to register image: ${uploadResult.error}` };
     }
 
-    // Extract imageId from response - try various shapes
-    const uploadData = uploadResult.data as Record<string, unknown>;
+    const uploadData = uploadResult.data;
     const pipelineImageId = uploadData?.imageId ?? uploadData?.image_id ?? uploadData?.id;
 
     if (!pipelineImageId) {
-      return {
-        error: `No imageId in upload response. Raw response: ${JSON.stringify(uploadResult.data)}`,
-        data: {
-          caption: "",
-          rawApiResponse: uploadResult.data,
-          debugInfo: { uploadImageResponse: uploadResult.data },
-        }
-      };
+      return { error: "No imageId returned from upload-image-from-url" };
     }
-
-    console.log("[CaptionGeneration] Step 1 complete. Pipeline imageId:", pipelineImageId);
 
     // ============================================================
     // PIPELINE STEP 2: Generate captions
+    // Response is an array of caption records: [{ id, content, ... }]
     // ============================================================
-    console.log("[CaptionGeneration] Step 2: Generating captions...");
-    console.log("[CaptionGeneration] Request body will include humorFlavorId:", humorFlavorId);
-
-    const captionResult = await apiCall<unknown>(
+    const captionResult = await apiCall<CaptionRecord[]>(
       "/pipeline/generate-captions",
       accessToken,
       {
         body: {
           imageId: pipelineImageId,
           humorFlavorId: humorFlavorId,
-          // Also try alternate field names in case API expects different format
-          humor_flavor_id: humorFlavorId,
-          flavorId: humorFlavorId,
-          flavor_id: humorFlavorId,
         },
       }
     );
 
-    console.log("[CaptionGeneration] Step 2 full response:", captionResult);
-
     if (captionResult.error) {
-      return {
-        error: `Failed to generate captions: ${captionResult.error}`,
-        data: {
-          caption: "",
-          rawApiResponse: captionResult.rawResponse,
-          debugInfo: {
-            uploadImageResponse: uploadResult.data,
-            generateCaptionsResponse: captionResult,
-          },
-        }
-      };
+      return { error: `Failed to generate captions: ${captionResult.error}` };
     }
 
-    // Return raw response for debugging
-    const result = captionResult.data;
+    // Parse the response - it's a direct array of caption records
+    const captionsArray = captionResult.data;
 
-    // Try to extract caption from various possible response shapes
-    let caption = "";
-    let captions: string[] = [];
-
-    if (result) {
-      const r = result as Record<string, unknown>;
-
-      // Try different field names
-      if (typeof r.caption === "string") caption = r.caption;
-      else if (typeof r.content === "string") caption = r.content;
-      else if (typeof r.text === "string") caption = r.text;
-      else if (typeof r.result === "string") caption = r.result;
-      else if (typeof r.output === "string") caption = r.output;
-
-      // Check for array of captions
-      if (Array.isArray(r.captions)) captions = r.captions;
-      else if (Array.isArray(r.results)) captions = r.results;
-      else if (Array.isArray(result)) captions = result as string[];
-
-      // If we have captions array but no single caption, use first one
-      if (!caption && captions.length > 0) {
-        caption = typeof captions[0] === "string" ? captions[0] : JSON.stringify(captions[0]);
-      }
+    if (!Array.isArray(captionsArray) || captionsArray.length === 0) {
+      return { error: "No captions returned from API" };
     }
+
+    // Extract the primary caption (first one) and all captions
+    const primaryCaption = captionsArray[0]?.content ?? "";
 
     return {
       data: {
-        caption,
-        captions: captions.length > 0 ? captions : undefined,
+        captions: captionsArray,
+        primaryCaption,
         imageId: String(pipelineImageId),
         humorFlavorId,
         humorFlavorSlug: flavor.slug,
-        rawApiResponse: result,
-        debugInfo: {
-          uploadImageResponse: uploadResult.data,
-          generateCaptionsResponse: result,
-        },
       },
     };
   } catch (err) {
-    console.error("[CaptionGeneration] Unexpected error:", err);
     return {
       error: err instanceof Error ? err.message : "Unknown error during caption generation"
     };
@@ -288,7 +219,6 @@ export async function getTestImages(limit = 20) {
       .limit(limit);
 
     if (error) {
-      console.error("[CaptionGeneration] Fetch images error:", error);
       return { data: [], error: error.message };
     }
 
@@ -311,7 +241,6 @@ export async function getHumorFlavorsForTest() {
       .order("slug", { ascending: true });
 
     if (error) {
-      console.error("[CaptionGeneration] Fetch flavors error:", error);
       return { data: [], error: error.message };
     }
 

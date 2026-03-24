@@ -49,21 +49,12 @@ export default function CaptionTester({ flavors, images }: Props) {
 
     if (response.error) {
       setError(response.error);
-      // Also set result if there's debug info
-      if (response.data) {
-        setResult(response.data);
-      }
     } else if (response.data) {
       setResult(response.data);
     }
 
     setLoading(false);
   };
-
-  // Check if we have any meaningful content
-  const hasCaption = result?.caption && result.caption.trim().length > 0;
-  const hasCaptions = result?.captions && result.captions.length > 0;
-  const hasRawResponse = result?.rawApiResponse !== undefined && result?.rawApiResponse !== null;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -88,10 +79,9 @@ export default function CaptionTester({ flavors, images }: Props) {
             ))}
           </select>
           {selectedFlavor && (
-            <div className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-              <p>{selectedFlavor.description || "No description"}</p>
-              <p className="text-xs text-gray-500 mt-1">ID: {selectedFlavor.id}</p>
-            </div>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+              {selectedFlavor.description || "No description"}
+            </p>
           )}
         </div>
 
@@ -162,7 +152,6 @@ export default function CaptionTester({ flavors, images }: Props) {
                 {selectedImage.image_description}
               </p>
             )}
-            <p className="text-xs text-gray-500 mt-1">ID: {selectedImage.id}</p>
           </div>
         )}
 
@@ -203,104 +192,69 @@ export default function CaptionTester({ flavors, images }: Props) {
         {error && (
           <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
             <h3 className="text-red-700 dark:text-red-400 font-medium">Error</h3>
-            <p className="text-red-600 dark:text-red-300 text-sm mt-1 whitespace-pre-wrap">{error}</p>
+            <p className="text-red-600 dark:text-red-300 text-sm mt-1">{error}</p>
           </div>
         )}
 
         {result && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 space-y-6">
-            {/* Request Info */}
-            <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Request Info
-              </h3>
-              <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-                <p>Humor Flavor: {result.humorFlavorSlug} (ID: {result.humorFlavorId})</p>
-                <p>Pipeline Image ID: {result.imageId}</p>
+            {/* Generation Info */}
+            <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Flavor:</span>
+                <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded">
+                  {result.humorFlavorSlug}
+                </span>
+                <span className="text-gray-400">(ID: {result.humorFlavorId})</span>
               </div>
             </div>
 
-            {/* Main caption - only show if we have one */}
-            {hasCaption && (
-              <div>
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  Generated Caption
-                </h2>
-                <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4">
-                  <p className="text-lg text-gray-900 dark:text-white leading-relaxed">
-                    {result.caption}
-                  </p>
-                </div>
+            {/* Primary Caption Preview */}
+            <div>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                Generated Caption
+              </h2>
+              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 rounded-lg p-4">
+                <p className="text-lg text-gray-900 dark:text-white leading-relaxed">
+                  {result.primaryCaption}
+                </p>
               </div>
-            )}
+            </div>
 
-            {/* Multiple captions */}
-            {hasCaptions && (
+            {/* All Generated Captions */}
+            {result.captions.length > 0 && (
               <div>
-                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  All Captions ({result.captions!.length})
+                <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                  All Captions ({result.captions.length})
                 </h3>
-                <div className="space-y-2">
-                  {result.captions!.map((cap, i) => (
-                    <div key={i} className="bg-gray-50 dark:bg-gray-900 rounded p-3">
-                      <p className="text-sm text-gray-800 dark:text-gray-200">
-                        {typeof cap === "string" ? cap : JSON.stringify(cap, null, 2)}
-                      </p>
+                <div className="space-y-3">
+                  {result.captions.map((caption, index) => (
+                    <div
+                      key={caption.id}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full text-xs font-medium">
+                          {index + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-gray-900 dark:text-white leading-relaxed">
+                            {caption.content}
+                          </p>
+                          <div className="mt-2 flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+                            <span>ID: {caption.id.slice(0, 8)}...</span>
+                            {caption.like_count !== undefined && (
+                              <span>{caption.like_count} likes</span>
+                            )}
+                            {caption.is_featured && (
+                              <span className="text-yellow-600 dark:text-yellow-400">Featured</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {/* Raw API Response - DEBUG */}
-            {hasRawResponse && (
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
-                <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-400 mb-2">
-                  DEBUG: Raw API Response (generate-captions)
-                </h3>
-                <pre className="text-xs text-gray-700 dark:text-gray-300 bg-yellow-50 dark:bg-yellow-900/20 rounded p-3 overflow-x-auto whitespace-pre-wrap max-h-96 overflow-y-auto">
-                  {JSON.stringify(result.rawApiResponse, null, 2)}
-                </pre>
-              </div>
-            )}
-
-            {/* Debug Info */}
-            {result.debugInfo && (
-              <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-4">
-                <h3 className="text-sm font-medium text-yellow-700 dark:text-yellow-400">
-                  DEBUG: All API Responses
-                </h3>
-
-                {result.debugInfo.uploadImageResponse !== undefined && (
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      upload-image-from-url response:
-                    </p>
-                    <pre className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 rounded p-2 overflow-x-auto whitespace-pre-wrap">
-                      {JSON.stringify(result.debugInfo.uploadImageResponse, null, 2)}
-                    </pre>
-                  </div>
-                )}
-
-                {result.debugInfo.generateCaptionsResponse !== undefined && (
-                  <div>
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
-                      generate-captions response:
-                    </p>
-                    <pre className="text-xs text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-900 rounded p-2 overflow-x-auto whitespace-pre-wrap">
-                      {JSON.stringify(result.debugInfo.generateCaptionsResponse, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* No caption message - only if truly empty */}
-            {!hasCaption && !hasCaptions && !hasRawResponse && (
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 text-center">
-                <p className="text-gray-500 dark:text-gray-400">
-                  No caption generated (response was empty)
-                </p>
               </div>
             )}
           </div>
