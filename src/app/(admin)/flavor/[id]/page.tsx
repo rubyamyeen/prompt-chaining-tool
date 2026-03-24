@@ -50,12 +50,24 @@ export default async function FlavorDetailPage({ params }: PageProps) {
   if (isNaN(flavorId)) {
     return (
       <div className="space-y-6">
-        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
-          &larr; Back to Flavors
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Flavors
         </Link>
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-          <h1 className="text-red-700 dark:text-red-400 font-bold">Invalid Flavor ID</h1>
-          <p className="text-red-600 dark:text-red-300 text-sm mt-1">The ID &quot;{id}&quot; is not a valid number.</p>
+        <div className="p-6 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-red-700 dark:text-red-400 font-semibold">Invalid Flavor ID</h1>
+              <p className="text-red-600 dark:text-red-300 text-sm mt-1">The ID &quot;{id}&quot; is not a valid number.</p>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -155,35 +167,54 @@ export default async function FlavorDetailPage({ params }: PageProps) {
   if (errorMessage || !flavor) {
     return (
       <div className="space-y-6">
-        <Link href="/" className="text-blue-600 dark:text-blue-400 hover:underline">
-          &larr; Back to Flavors
+        <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to Flavors
         </Link>
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg">
-          <h1 className="text-red-700 dark:text-red-400 font-bold">Error Loading Flavor</h1>
-          <p className="text-red-600 dark:text-red-300 text-sm mt-1">{errorMessage ?? "Flavor not found"}</p>
+        <div className="p-6 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-2xl">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-red-700 dark:text-red-400 font-semibold">Error Loading Flavor</h1>
+              <p className="text-red-600 dark:text-red-300 text-sm mt-1">{errorMessage ?? "Flavor not found"}</p>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-start gap-4">
         <Link
           href="/"
-          className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+          className="p-2.5 text-gray-500 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-xl transition-colors"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            {flavor.slug}
-          </h1>
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-1">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-violet-500/25">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            </div>
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white tracking-tight">
+              {flavor.slug}
+            </h1>
+          </div>
           {flavor.description && (
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-gray-500 dark:text-gray-400 ml-[52px]">
               {flavor.description}
             </p>
           )}
@@ -191,20 +222,32 @@ export default async function FlavorDetailPage({ params }: PageProps) {
       </div>
 
       {/* Steps section */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Steps
+      <div className="bg-white/60 dark:bg-[#1a1f2e]/60 backdrop-blur-sm rounded-2xl border border-gray-200/80 dark:border-white/[0.06] p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white tracking-tight">
+            Prompt Chain Steps
           </h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {steps.length} step{steps.length !== 1 ? "s" : ""}
-          </span>
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 dark:bg-white/[0.06]">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+              {steps.length} step{steps.length !== 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
 
         {stepsErrorMessage && (
-          <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
-            <p className="text-red-700 dark:text-red-400 font-medium">Failed to load steps</p>
-            <p className="text-red-600 dark:text-red-300 text-sm mt-1">{stepsErrorMessage}</p>
+          <div className="bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-red-600 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-red-700 dark:text-red-400 font-medium">Failed to load steps</p>
+                <p className="text-red-600 dark:text-red-300 text-sm mt-1">{stepsErrorMessage}</p>
+              </div>
+            </div>
           </div>
         )}
 
