@@ -26,6 +26,75 @@ async function requireAuthWithSession() {
 }
 
 /**
+ * Checks if a response body looks like a timeout or transient error.
+ */
+function isTimeoutError(text: string): boolean {
+  const lower = text.toLowerCase();
+  return lower.includes("timeout") || lower.includes("timed out") || lower.includes("gateway");
+}
+
+/**
+ * Extracts a user-friendly error message from API response.
+ */
+function extractErrorMessage(rawText: string, status: number): string {
+  // Check for timeout-specific errors
+  if (isTimeoutError(rawText)) {
+    return "Caption generation timed out. Please try again.";
+  }
+
+  // Try to parse as JSON and extract error message
+  try {
+    const parsed = JSON.parse(rawText);
+    if (parsed.error?.message) return parsed.error.message;
+    if (parsed.message) return parsed.message;
+    if (parsed.error && typeof parsed.error === "string") return parsed.error;
+  } catch {
+    // Not JSON, use raw text
+  }
+
+  // Truncate very long error messages
+  const truncated = rawText.length > 200 ? rawText.substring(0, 200) + "..." : rawText;
+  return `API error (${status}): ${truncated}`;
+}
+
+/**
+ * Safely parses response body based on content-type.
+ */
+async function safeParseResponse(response: Response): Promise<{ json?: unknown; text: string; isJson: boolean }> {
+  const contentType = response.headers.get("content-type") || "";
+  const isJsonContent = contentType.includes("application/json");
+
+  // Always get the text first (can only read body once)
+  let text: string;
+  try {
+    text = await response.text();
+  } catch (err) {
+    console.error("[apiCall] Failed to read response body:", err);
+    return { text: "Failed to read response body", isJson: false };
+  }
+
+  // If content-type is JSON, try to parse
+  if (isJsonContent) {
+    try {
+      const json = JSON.parse(text);
+      return { json, text, isJson: true };
+    } catch (err) {
+      console.error("[apiCall] Content-type was JSON but parsing failed:", err);
+      return { text, isJson: false };
+    }
+  }
+
+  // Content-type is not JSON, but try parsing anyway (some APIs don't set headers correctly)
+  try {
+    const json = JSON.parse(text);
+    return { json, text, isJson: true };
+  } catch {
+    // Not JSON, that's fine
+    return { text, isJson: false };
+  }
+}
+
+/**
  * Makes an authenticated API call to the AlmostCrackd pipeline.
  */
 async function apiCall<T = unknown>(
@@ -49,19 +118,43 @@ async function apiCall<T = unknown>(
       body: body ? JSON.stringify(body) : undefined,
     });
 
-    const rawText = await response.text();
+    // Log response details for debugging
+    console.log("[apiCall] Response:", {
+      url: response.url,
+      status: response.status,
+      statusText: response.statusText,
+      contentType: response.headers.get("content-type"),
+    });
 
+    // Safely parse the response
+    const { json, text, isJson } = await safeParseResponse(response);
+
+    // Log parsed body for debugging (truncated)
+    console.log("[apiCall] Body:", {
+      isJson,
+      preview: text.length > 500 ? text.substring(0, 500) + "..." : text,
+    });
+
+    // Handle error responses
     if (!response.ok) {
-      return { error: `API error (${response.status}): ${rawText}` };
+      const errorMessage = extractErrorMessage(text, response.status);
+      return { error: errorMessage };
     }
 
-    try {
-      const data = JSON.parse(rawText);
-      return { data };
-    } catch {
-      return { data: rawText as T };
+    // Handle successful responses
+    if (isJson && json !== undefined) {
+      return { data: json as T };
     }
+
+    // Response was OK but not JSON - check if it's an error message disguised as success
+    if (isTimeoutError(text)) {
+      return { error: "Caption generation timed out. Please try again." };
+    }
+
+    // Return text as data (some endpoints might return plain text on success)
+    return { data: text as T };
   } catch (err) {
+    console.error("[apiCall] Fetch exception:", err);
     return { error: err instanceof Error ? err.message : "API call failed" };
   }
 }
