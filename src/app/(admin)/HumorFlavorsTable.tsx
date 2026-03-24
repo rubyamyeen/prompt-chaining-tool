@@ -127,40 +127,40 @@ export default function HumorFlavorsTable({ initialData }: Props) {
   }
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
       {error && (
-        <div className="px-4 py-2 bg-red-900/40 border-b border-red-700">
-          <p className="text-red-300 text-sm">{error}</p>
+        <div className="px-4 py-2 bg-red-100 dark:bg-red-900/40 border-b border-red-200 dark:border-red-700">
+          <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
         </div>
       )}
 
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-700 bg-gray-800/50">
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+            <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 ID
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Slug
               </th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Description
               </th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
+              <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700/50">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700/50">
             {flavors.map((flavor) => (
               <tr
                 key={flavor.id}
-                className="hover:bg-gray-700/30"
+                className="hover:bg-gray-50 dark:hover:bg-gray-700/30"
               >
                 {editingId === flavor.id ? (
                   <>
-                    <td className="px-4 py-2 text-sm text-gray-300">
+                    <td className="px-4 py-2 text-sm text-gray-700 dark:text-gray-300">
                       {flavor.id}
                     </td>
                     <td className="px-4 py-2">
@@ -171,7 +171,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                           const value = e.target.value;
                           setEditFormData(prev => ({ ...prev, slug: value }));
                         }}
-                        className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                         placeholder="slug"
                       />
                     </td>
@@ -183,7 +183,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                           const value = e.target.value;
                           setEditFormData(prev => ({ ...prev, description: value }));
                         }}
-                        className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
+                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                         placeholder="Description (optional)"
                       />
                     </td>
@@ -201,7 +201,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                           type="button"
                           onClick={resetForm}
                           disabled={loading}
-                          className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded disabled:opacity-50"
+                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded disabled:opacity-50"
                         >
                           Cancel
                         </button>
@@ -210,25 +210,25 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   </>
                 ) : (
                   <>
-                    <td className="px-4 py-2 text-sm text-gray-400">
+                    <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                       {flavor.id}
                     </td>
                     <td className="px-4 py-2 text-sm">
                       <Link
                         href={`/flavor/${flavor.id}`}
-                        className="text-blue-400 hover:text-blue-300 font-medium"
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-500 dark:hover:text-blue-300 font-medium"
                       >
                         {flavor.slug}
                       </Link>
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-400">
+                    <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                       {flavor.description || "—"}
                     </td>
                     <td className="px-4 py-2 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <Link
                           href={`/flavor/${flavor.id}`}
-                          className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded"
+                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                         >
                           Steps
                         </Link>
@@ -236,7 +236,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                           type="button"
                           onClick={() => startEdit(flavor)}
                           disabled={loading}
-                          className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded disabled:opacity-50"
+                          className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded disabled:opacity-50"
                         >
                           Edit
                         </button>
@@ -244,7 +244,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                           type="button"
                           onClick={() => handleDelete(flavor.id)}
                           disabled={loading}
-                          className="px-2 py-1 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded disabled:opacity-50"
+                          className="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded disabled:opacity-50"
                         >
                           Delete
                         </button>
@@ -257,8 +257,8 @@ export default function HumorFlavorsTable({ initialData }: Props) {
 
             {/* Create new row - using uncontrolled inputs with refs */}
             {isCreating && (
-              <tr className="bg-blue-900/20">
-                <td className="px-4 py-2 text-sm text-gray-400">
+              <tr className="bg-blue-50 dark:bg-blue-900/20">
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                   New
                 </td>
                 <td className="px-4 py-2">
@@ -266,7 +266,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                     ref={createSlugRef}
                     type="text"
                     defaultValue=""
-                    className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                     placeholder="slug"
                     autoFocus
                   />
@@ -276,7 +276,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                     ref={createDescRef}
                     type="text"
                     defaultValue=""
-                    className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
+                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-blue-500 focus:outline-none"
                     placeholder="Description (optional)"
                   />
                 </td>
@@ -294,7 +294,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                       type="button"
                       onClick={resetForm}
                       disabled={loading}
-                      className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded disabled:opacity-50"
+                      className="px-2 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded disabled:opacity-50"
                     >
                       Cancel
                     </button>
@@ -317,7 +317,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
 
       {/* Add button */}
       {!isCreating && editingId === null && (
-        <div className="px-4 py-3 border-t border-gray-700">
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700">
           <button
             type="button"
             onClick={startCreate}
