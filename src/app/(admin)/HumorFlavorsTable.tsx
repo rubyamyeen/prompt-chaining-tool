@@ -161,7 +161,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                       <input
                         type="text"
                         value={formData.slug}
-                        onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ ...prev, slug: value }));
+                        }}
                         className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                         placeholder="slug"
                       />
@@ -170,7 +173,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                       <input
                         type="text"
                         value={formData.description ?? ""}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setFormData(prev => ({ ...prev, description: value }));
+                        }}
                         className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                         placeholder="Description (optional)"
                       />
@@ -253,7 +259,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   <input
                     type="text"
                     value={formData.slug}
-                    onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ ...prev, slug: value }));
+                    }}
                     className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                     placeholder="slug"
                     autoFocus
@@ -263,7 +272,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   <input
                     type="text"
                     value={formData.description ?? ""}
-                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setFormData(prev => ({ ...prev, description: value }));
+                    }}
                     className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                     placeholder="Description (optional)"
                   />
