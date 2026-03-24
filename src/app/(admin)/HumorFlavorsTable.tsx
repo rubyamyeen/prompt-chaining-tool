@@ -236,8 +236,8 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   </p>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                {/* Actions - Always visible */}
+                <div className="flex items-center gap-1">
                   <Link
                     href={`/flavor/${flavor.id}`}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-violet-600 dark:text-violet-400
