@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   createHumorFlavor,
@@ -25,14 +25,14 @@ export default function HumorFlavorsTable({ initialData }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const resetForm = useCallback(() => {
+  function resetForm() {
     setFormData({ slug: "", description: "" });
     setIsCreating(false);
     setEditingId(null);
     setError(null);
-  }, []);
+  }
 
-  const handleCreate = useCallback(async () => {
+  async function handleCreate() {
     if (!formData.slug.trim()) {
       setError("Slug is required");
       return;
@@ -51,9 +51,9 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     }
 
     setLoading(false);
-  }, [formData, resetForm]);
+  }
 
-  const handleUpdate = useCallback(async (id: number) => {
+  async function handleUpdate(id: number) {
     if (!formData.slug.trim()) {
       setError("Slug is required");
       return;
@@ -72,9 +72,9 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     }
 
     setLoading(false);
-  }, [formData, resetForm]);
+  }
 
-  const handleDelete = useCallback(async (id: number) => {
+  async function handleDelete(id: number) {
     if (!confirm("Delete this flavor and all its steps?")) return;
 
     setLoading(true);
@@ -89,9 +89,9 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     }
 
     setLoading(false);
-  }, []);
+  }
 
-  const startEdit = useCallback((flavor: HumorFlavor) => {
+  function startEdit(flavor: HumorFlavor) {
     setEditingId(flavor.id);
     setFormData({
       slug: flavor.slug,
@@ -99,14 +99,14 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     });
     setIsCreating(false);
     setError(null);
-  }, []);
+  }
 
-  const startCreate = useCallback(() => {
+  function startCreate() {
     setIsCreating(true);
     setEditingId(null);
     setFormData({ slug: "", description: "" });
     setError(null);
-  }, []);
+  }
 
   return (
     <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">

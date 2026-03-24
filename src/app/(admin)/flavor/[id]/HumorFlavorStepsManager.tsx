@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import {
   createHumorFlavorStep,
   updateHumorFlavorStep,
@@ -73,34 +73,37 @@ export default function HumorFlavorStepsManager({
   const [loading, setLoading] = useState(false);
 
   // Lookup helpers
-  const getModelName = useCallback((id: number) =>
-    lookups.llmModels.find(m => m.id === id)?.name ?? `Model #${id}`, [lookups.llmModels]);
+  function getModelName(id: number) {
+    return lookups.llmModels.find(m => m.id === id)?.name ?? `Model #${id}`;
+  }
 
-  const getInputTypeName = useCallback((id: number) => {
+  function getInputTypeName(id: number) {
     const t = lookups.llmInputTypes.find(t => t.id === id);
     return t ? (t.description || t.slug) : `Input #${id}`;
-  }, [lookups.llmInputTypes]);
+  }
 
-  const getOutputTypeName = useCallback((id: number) => {
+  function getOutputTypeName(id: number) {
     const t = lookups.llmOutputTypes.find(t => t.id === id);
     return t ? (t.description || t.slug) : `Output #${id}`;
-  }, [lookups.llmOutputTypes]);
+  }
 
-  const getStepTypeName = useCallback((id: number) => {
+  function getStepTypeName(id: number) {
     const t = lookups.humorFlavorStepTypes.find(t => t.id === id);
     return t ? (t.description || t.slug) : `Step Type #${id}`;
-  }, [lookups.humorFlavorStepTypes]);
+  }
 
-  const getLabel = (item: LookupWithDescription) => item.description || item.slug;
+  function getLabel(item: LookupWithDescription) {
+    return item.description || item.slug;
+  }
 
-  const resetForm = useCallback(() => {
+  function resetForm() {
     setFormData(emptyFormData);
     setIsCreating(false);
     setEditingId(null);
     setError(null);
-  }, []);
+  }
 
-  const handleCreate = useCallback(async () => {
+  async function handleCreate() {
     if (!formData.llm_model_id || !formData.llm_input_type_id || !formData.llm_output_type_id || !formData.humor_flavor_step_type_id) {
       setError("Please select all required fields");
       return;
@@ -123,9 +126,9 @@ export default function HumorFlavorStepsManager({
     } else {
       window.location.reload();
     }
-  }, [formData, steps, humorFlavorId]);
+  }
 
-  const handleUpdate = useCallback(async (id: number) => {
+  async function handleUpdate(id: number) {
     setLoading(true);
     setError(null);
 
@@ -140,9 +143,9 @@ export default function HumorFlavorStepsManager({
     } else {
       window.location.reload();
     }
-  }, [formData, humorFlavorId]);
+  }
 
-  const handleDelete = useCallback(async (id: number) => {
+  async function handleDelete(id: number) {
     if (!confirm("Delete this step?")) return;
 
     setLoading(true);
@@ -156,11 +159,12 @@ export default function HumorFlavorStepsManager({
       setSteps(prev => prev.filter(s => s.id !== id));
     }
     setLoading(false);
-  }, [humorFlavorId]);
+  }
 
-  const handleMoveUp = useCallback(async (index: number) => {
+  async function handleMoveUp(index: number) {
     if (index === 0 || loading) return;
 
+    const currentSteps = [...steps];
     const newSteps = [...steps];
     [newSteps[index - 1], newSteps[index]] = [newSteps[index], newSteps[index - 1]];
     setSteps(newSteps);
@@ -170,14 +174,15 @@ export default function HumorFlavorStepsManager({
 
     if (result.error) {
       setError(result.error);
-      setSteps(steps);
+      setSteps(currentSteps);
     }
     setLoading(false);
-  }, [steps, loading, humorFlavorId]);
+  }
 
-  const handleMoveDown = useCallback(async (index: number) => {
+  async function handleMoveDown(index: number) {
     if (index === steps.length - 1 || loading) return;
 
+    const currentSteps = [...steps];
     const newSteps = [...steps];
     [newSteps[index], newSteps[index + 1]] = [newSteps[index + 1], newSteps[index]];
     setSteps(newSteps);
@@ -187,12 +192,12 @@ export default function HumorFlavorStepsManager({
 
     if (result.error) {
       setError(result.error);
-      setSteps(steps);
+      setSteps(currentSteps);
     }
     setLoading(false);
-  }, [steps, loading, humorFlavorId]);
+  }
 
-  const startEdit = useCallback((step: HumorFlavorStep) => {
+  function startEdit(step: HumorFlavorStep) {
     setEditingId(step.id);
     setFormData({
       llm_temperature: step.llm_temperature,
@@ -206,18 +211,18 @@ export default function HumorFlavorStepsManager({
     });
     setIsCreating(false);
     setError(null);
-  }, []);
+  }
 
-  const startCreate = useCallback(() => {
+  function startCreate() {
     setIsCreating(true);
     setEditingId(null);
     setFormData(emptyFormData);
     setError(null);
-  }, []);
+  }
 
-  const toggleExpanded = useCallback((id: number) => {
+  function toggleExpanded(id: number) {
     setExpandedId(prev => prev === id ? null : id);
-  }, []);
+  }
 
   return (
     <div className="space-y-3">
