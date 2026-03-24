@@ -32,8 +32,8 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     setError(null);
   }
 
-  async function handleCreate() {
-    if (!formData.slug.trim()) {
+  async function handleCreate(data: HumorFlavorFormData) {
+    if (!data.slug.trim()) {
       setError("Slug is required");
       return;
     }
@@ -41,20 +41,24 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     setLoading(true);
     setError(null);
 
-    const result = await createHumorFlavor(formData);
+    try {
+      const result = await createHumorFlavor(data);
 
-    if (result.error) {
-      setError(result.error);
-    } else if (result.data) {
-      setFlavors(prev => [...prev, result.data as HumorFlavor]);
-      resetForm();
+      if (result.error) {
+        setError(result.error);
+      } else if (result.data) {
+        setFlavors(prev => [...prev, result.data as HumorFlavor]);
+        resetForm();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
-  async function handleUpdate(id: number) {
-    if (!formData.slug.trim()) {
+  async function handleUpdate(id: number, data: HumorFlavorFormData) {
+    if (!data.slug.trim()) {
       setError("Slug is required");
       return;
     }
@@ -62,16 +66,20 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     setLoading(true);
     setError(null);
 
-    const result = await updateHumorFlavor(id, formData);
+    try {
+      const result = await updateHumorFlavor(id, data);
 
-    if (result.error) {
-      setError(result.error);
-    } else if (result.data) {
-      setFlavors(prev => prev.map(f => f.id === id ? result.data as HumorFlavor : f));
-      resetForm();
+      if (result.error) {
+        setError(result.error);
+      } else if (result.data) {
+        setFlavors(prev => prev.map(f => f.id === id ? result.data as HumorFlavor : f));
+        resetForm();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function handleDelete(id: number) {
@@ -80,15 +88,19 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     setLoading(true);
     setError(null);
 
-    const result = await deleteHumorFlavor(id);
+    try {
+      const result = await deleteHumorFlavor(id);
 
-    if (result.error) {
-      setError(result.error);
-    } else {
-      setFlavors(prev => prev.filter(f => f.id !== id));
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setFlavors(prev => prev.filter(f => f.id !== id));
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   function startEdit(flavor: HumorFlavor) {
@@ -167,7 +179,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
-                          onClick={() => handleUpdate(flavor.id)}
+                          onClick={() => handleUpdate(flavor.id, { ...formData })}
                           disabled={loading}
                           className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
                         >
@@ -260,7 +272,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      onClick={handleCreate}
+                      onClick={() => handleCreate({ ...formData })}
                       disabled={loading}
                       className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
                     >
