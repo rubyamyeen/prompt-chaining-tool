@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -8,61 +8,85 @@ interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
   resolvedTheme: "light" | "dark";
-  mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: "system",
   setTheme: () => {},
   resolvedTheme: "dark",
-  mounted: false,
 });
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("dark");
-  const [mounted, setMounted] = useState(false);
+function getSystemTheme(): "light" | "dark" {
+  if (typeof window === "undefined") return "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
-  useEffect(() => {
-    setMounted(true);
-    const stored = localStorage.getItem("theme") as Theme | null;
-    if (stored) {
-      setThemeState(stored);
+function applyThemeToDOM(resolvedTheme: "light" | "dark") {
+  const root = document.documentElement;
+  root.classList.remove("light", "dark");
+  root.classList.add(resolvedTheme);
+}
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
+  // Initialize from localStorage or default to system
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "system";
+    return (localStorage.getItem("theme") as Theme) || "system";
+  });
+
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "dark";
+    const stored = localStorage.getItem("theme") as Theme;
+    if (stored === "light") return "light";
+    if (stored === "dark") return "dark";
+    return getSystemTheme();
+  });
+
+  // Apply theme whenever it changes
+  const applyTheme = useCallback((newTheme: Theme) => {
+    let resolved: "light" | "dark";
+    if (newTheme === "system") {
+      resolved = getSystemTheme();
+    } else {
+      resolved = newTheme;
     }
+    setResolvedTheme(resolved);
+    applyThemeToDOM(resolved);
   }, []);
 
-  useEffect(() => {
-    if (!mounted) return;
-
-    const root = window.document.documentElement;
-
-    const applyTheme = (newTheme: "light" | "dark") => {
-      root.classList.remove("light", "dark");
-      root.classList.add(newTheme);
-      setResolvedTheme(newTheme);
-    };
-
-    if (theme === "system") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      applyTheme(mediaQuery.matches ? "dark" : "light");
-
-      const handler = (e: MediaQueryListEvent) => {
-        applyTheme(e.matches ? "dark" : "light");
-      };
-      mediaQuery.addEventListener("change", handler);
-      return () => mediaQuery.removeEventListener("change", handler);
-    } else {
-      applyTheme(theme);
-    }
-  }, [theme, mounted]);
-
-  const setTheme = (newTheme: Theme) => {
+  // Set theme and persist to localStorage
+  const setTheme = useCallback((newTheme: Theme) => {
     localStorage.setItem("theme", newTheme);
     setThemeState(newTheme);
-  };
+    applyTheme(newTheme);
+  }, [applyTheme]);
+
+  // On mount, sync with what the inline script applied
+  useEffect(() => {
+    const stored = localStorage.getItem("theme") as Theme | null;
+    const currentTheme = stored || "system";
+    setThemeState(currentTheme);
+    applyTheme(currentTheme);
+  }, [applyTheme]);
+
+  // Listen for system theme changes when in "system" mode
+  useEffect(() => {
+    if (theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      const newResolved = e.matches ? "dark" : "light";
+      setResolvedTheme(newResolved);
+      applyThemeToDOM(newResolved);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme, mounted }}>
+    <ThemeContext.Provider value={{ theme, setTheme, resolvedTheme }}>
       {children}
     </ThemeContext.Provider>
   );
