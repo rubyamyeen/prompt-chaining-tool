@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import {
   createHumorFlavor,
@@ -18,22 +18,29 @@ export default function HumorFlavorsTable({ initialData }: Props) {
   const [flavors, setFlavors] = useState(initialData);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
-  const [formData, setFormData] = useState<HumorFlavorFormData>({
+  const [editFormData, setEditFormData] = useState<HumorFlavorFormData>({
     slug: "",
     description: "",
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Refs for create form inputs
+  const createSlugRef = useRef<HTMLInputElement>(null);
+  const createDescRef = useRef<HTMLInputElement>(null);
+
   function resetForm() {
-    setFormData({ slug: "", description: "" });
     setIsCreating(false);
     setEditingId(null);
+    setEditFormData({ slug: "", description: "" });
     setError(null);
   }
 
-  async function handleCreate(data: HumorFlavorFormData) {
-    if (!data.slug.trim()) {
+  async function handleCreate() {
+    const slug = createSlugRef.current?.value?.trim() ?? "";
+    const description = createDescRef.current?.value ?? "";
+
+    if (!slug) {
       setError("Slug is required");
       return;
     }
@@ -42,7 +49,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     setError(null);
 
     try {
-      const result = await createHumorFlavor(data);
+      const result = await createHumorFlavor({ slug, description });
 
       if (result.error) {
         setError(result.error);
@@ -57,8 +64,8 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     }
   }
 
-  async function handleUpdate(id: number, data: HumorFlavorFormData) {
-    if (!data.slug.trim()) {
+  async function handleUpdate(id: number) {
+    if (!editFormData.slug.trim()) {
       setError("Slug is required");
       return;
     }
@@ -67,7 +74,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     setError(null);
 
     try {
-      const result = await updateHumorFlavor(id, data);
+      const result = await updateHumorFlavor(id, editFormData);
 
       if (result.error) {
         setError(result.error);
@@ -105,7 +112,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
 
   function startEdit(flavor: HumorFlavor) {
     setEditingId(flavor.id);
-    setFormData({
+    setEditFormData({
       slug: flavor.slug,
       description: flavor.description ?? "",
     });
@@ -116,7 +123,6 @@ export default function HumorFlavorsTable({ initialData }: Props) {
   function startCreate() {
     setIsCreating(true);
     setEditingId(null);
-    setFormData({ slug: "", description: "" });
     setError(null);
   }
 
@@ -160,10 +166,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                     <td className="px-4 py-2">
                       <input
                         type="text"
-                        value={formData.slug}
+                        value={editFormData.slug}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setFormData(prev => ({ ...prev, slug: value }));
+                          setEditFormData(prev => ({ ...prev, slug: value }));
                         }}
                         className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                         placeholder="slug"
@@ -172,10 +178,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                     <td className="px-4 py-2">
                       <input
                         type="text"
-                        value={formData.description ?? ""}
+                        value={editFormData.description ?? ""}
                         onChange={(e) => {
                           const value = e.target.value;
-                          setFormData(prev => ({ ...prev, description: value }));
+                          setEditFormData(prev => ({ ...prev, description: value }));
                         }}
                         className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                         placeholder="Description (optional)"
@@ -185,7 +191,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           type="button"
-                          onClick={() => handleUpdate(flavor.id, { ...formData })}
+                          onClick={() => handleUpdate(flavor.id)}
                           disabled={loading}
                           className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
                         >
@@ -249,7 +255,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
               </tr>
             ))}
 
-            {/* Create new row */}
+            {/* Create new row - using uncontrolled inputs with refs */}
             {isCreating && (
               <tr className="bg-blue-900/20">
                 <td className="px-4 py-2 text-sm text-gray-400">
@@ -257,12 +263,9 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                 </td>
                 <td className="px-4 py-2">
                   <input
+                    ref={createSlugRef}
                     type="text"
-                    value={formData.slug}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData(prev => ({ ...prev, slug: value }));
-                    }}
+                    defaultValue=""
                     className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                     placeholder="slug"
                     autoFocus
@@ -270,12 +273,9 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                 </td>
                 <td className="px-4 py-2">
                   <input
+                    ref={createDescRef}
                     type="text"
-                    value={formData.description ?? ""}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setFormData(prev => ({ ...prev, description: value }));
-                    }}
+                    defaultValue=""
                     className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                     placeholder="Description (optional)"
                   />
@@ -284,7 +284,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   <div className="flex items-center justify-end gap-1">
                     <button
                       type="button"
-                      onClick={() => handleCreate({ ...formData })}
+                      onClick={handleCreate}
                       disabled={loading}
                       className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
                     >
