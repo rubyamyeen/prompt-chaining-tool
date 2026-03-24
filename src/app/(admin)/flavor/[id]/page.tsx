@@ -8,16 +8,25 @@ interface PageProps {
   params: Promise<{ id: string }>;
 }
 
-interface LookupOption {
+// llm_models has: id, name
+interface LlmModel {
   id: number;
   name: string;
 }
 
+// These tables use description/slug instead of name
+interface LookupWithDescription {
+  id: number;
+  description: string | null;
+  slug: string;
+}
+
 interface Lookups {
-  llmModels: LookupOption[];
-  llmInputTypes: LookupOption[];
-  llmOutputTypes: LookupOption[];
-  humorFlavorStepTypes: LookupOption[];
+  llmModels: LlmModel[];
+  llmInputTypes: LookupWithDescription[];
+  llmOutputTypes: LookupWithDescription[];
+  humorFlavorStepTypes: LookupWithDescription[];
+  errors: string[];
 }
 
 interface HumorFlavorStep {
@@ -59,6 +68,7 @@ export default async function FlavorDetailPage({ params }: PageProps) {
     llmInputTypes: [],
     llmOutputTypes: [],
     humorFlavorStepTypes: [],
+    errors: [],
   };
   let errorMessage: string | null = null;
   let stepsErrorMessage: string | null = null;
@@ -95,32 +105,43 @@ export default async function FlavorDetailPage({ params }: PageProps) {
         steps = (stepsData as HumorFlavorStep[]) ?? [];
       }
 
-      // Fetch lookup data
+      // Fetch lookup data - use select("*") to get all columns
+      // llm_models: id, name
+      // llm_input_types: id, description, slug
+      // llm_output_types: id, description, slug
+      // humor_flavor_step_types: id, description, slug
       const [modelsResult, inputTypesResult, outputTypesResult, stepTypesResult] = await Promise.all([
-        supabase.from("llm_models").select("id, name").order("name"),
-        supabase.from("llm_input_types").select("id, name").order("name"),
-        supabase.from("llm_output_types").select("id, name").order("name"),
-        supabase.from("humor_flavor_step_types").select("id, name").order("name"),
+        supabase.from("llm_models").select("*").order("name"),
+        supabase.from("llm_input_types").select("*").order("slug"),
+        supabase.from("llm_output_types").select("*").order("slug"),
+        supabase.from("humor_flavor_step_types").select("*").order("slug"),
       ]);
+
+      const lookupErrors: string[] = [];
 
       if (modelsResult.error) {
         console.error("[FlavorDetailPage] Models lookup error:", JSON.stringify(modelsResult.error, null, 2));
+        lookupErrors.push(`LLM Models: ${modelsResult.error.message}`);
       }
       if (inputTypesResult.error) {
         console.error("[FlavorDetailPage] Input types lookup error:", JSON.stringify(inputTypesResult.error, null, 2));
+        lookupErrors.push(`Input Types: ${inputTypesResult.error.message}`);
       }
       if (outputTypesResult.error) {
         console.error("[FlavorDetailPage] Output types lookup error:", JSON.stringify(outputTypesResult.error, null, 2));
+        lookupErrors.push(`Output Types: ${outputTypesResult.error.message}`);
       }
       if (stepTypesResult.error) {
         console.error("[FlavorDetailPage] Step types lookup error:", JSON.stringify(stepTypesResult.error, null, 2));
+        lookupErrors.push(`Step Types: ${stepTypesResult.error.message}`);
       }
 
       lookups = {
-        llmModels: modelsResult.data ?? [],
-        llmInputTypes: inputTypesResult.data ?? [],
-        llmOutputTypes: outputTypesResult.data ?? [],
-        humorFlavorStepTypes: stepTypesResult.data ?? [],
+        llmModels: (modelsResult.data as LlmModel[]) ?? [],
+        llmInputTypes: (inputTypesResult.data as LookupWithDescription[]) ?? [],
+        llmOutputTypes: (outputTypesResult.data as LookupWithDescription[]) ?? [],
+        humorFlavorStepTypes: (stepTypesResult.data as LookupWithDescription[]) ?? [],
+        errors: lookupErrors,
       };
     }
   } catch (err) {

@@ -23,16 +23,25 @@ interface HumorFlavorStep {
   description: string | null;
 }
 
-interface LookupOption {
+// llm_models has: id, name
+interface LlmModel {
   id: number;
   name: string;
 }
 
+// These tables use description/slug instead of name
+interface LookupWithDescription {
+  id: number;
+  description: string | null;
+  slug: string;
+}
+
 interface Lookups {
-  llmModels: LookupOption[];
-  llmInputTypes: LookupOption[];
-  llmOutputTypes: LookupOption[];
-  humorFlavorStepTypes: LookupOption[];
+  llmModels: LlmModel[];
+  llmInputTypes: LookupWithDescription[];
+  llmOutputTypes: LookupWithDescription[];
+  humorFlavorStepTypes: LookupWithDescription[];
+  errors: string[];
 }
 
 interface Props {
@@ -65,11 +74,24 @@ export default function HumorFlavorStepsManager({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Helper functions to look up names from lookups
+  // Helper functions to look up display names from lookups
+  // llm_models uses "name", others use "description" (fallback to "slug")
   const getModelName = (id: number) => lookups.llmModels.find(m => m.id === id)?.name ?? `Model #${id}`;
-  const getInputTypeName = (id: number) => lookups.llmInputTypes.find(t => t.id === id)?.name ?? `Input #${id}`;
-  const getOutputTypeName = (id: number) => lookups.llmOutputTypes.find(t => t.id === id)?.name ?? `Output #${id}`;
-  const getStepTypeName = (id: number) => lookups.humorFlavorStepTypes.find(t => t.id === id)?.name ?? `Step Type #${id}`;
+  const getInputTypeName = (id: number) => {
+    const t = lookups.llmInputTypes.find(t => t.id === id);
+    return t ? (t.description || t.slug) : `Input #${id}`;
+  };
+  const getOutputTypeName = (id: number) => {
+    const t = lookups.llmOutputTypes.find(t => t.id === id);
+    return t ? (t.description || t.slug) : `Output #${id}`;
+  };
+  const getStepTypeName = (id: number) => {
+    const t = lookups.humorFlavorStepTypes.find(t => t.id === id);
+    return t ? (t.description || t.slug) : `Step Type #${id}`;
+  };
+
+  // Helper to get display label for lookup items
+  const getLabel = (item: LookupWithDescription) => item.description || item.slug;
 
   const resetForm = () => {
     setFormData(emptyFormData);
@@ -204,6 +226,15 @@ export default function HumorFlavorStepsManager({
       {error && (
         <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
           <p className="text-red-400 text-sm">{error}</p>
+        </div>
+      )}
+
+      {lookups.errors.length > 0 && (
+        <div className="bg-yellow-900/30 border border-yellow-800 rounded-lg p-4">
+          <p className="text-yellow-400 font-medium text-sm">Failed to load some lookup data:</p>
+          {lookups.errors.map((err, i) => (
+            <p key={i} className="text-yellow-300 text-sm mt-1">{err}</p>
+          ))}
         </div>
       )}
 
@@ -357,9 +388,12 @@ export default function HumorFlavorStepsManager({
               >
                 <option value={0}>Select step type...</option>
                 {lookups.humorFlavorStepTypes.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>{getLabel(t)}</option>
                 ))}
               </select>
+              {lookups.humorFlavorStepTypes.length === 0 && (
+                <p className="text-yellow-400 text-xs mt-1">No step types available</p>
+              )}
             </div>
 
             <div>
@@ -376,6 +410,9 @@ export default function HumorFlavorStepsManager({
                   <option key={m.id} value={m.id}>{m.name}</option>
                 ))}
               </select>
+              {lookups.llmModels.length === 0 && (
+                <p className="text-yellow-400 text-xs mt-1">No models available</p>
+              )}
             </div>
 
             <div>
@@ -389,9 +426,12 @@ export default function HumorFlavorStepsManager({
               >
                 <option value={0}>Select input type...</option>
                 {lookups.llmInputTypes.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>{getLabel(t)}</option>
                 ))}
               </select>
+              {lookups.llmInputTypes.length === 0 && (
+                <p className="text-yellow-400 text-xs mt-1">No input types available</p>
+              )}
             </div>
 
             <div>
@@ -405,9 +445,12 @@ export default function HumorFlavorStepsManager({
               >
                 <option value={0}>Select output type...</option>
                 {lookups.llmOutputTypes.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>{getLabel(t)}</option>
                 ))}
               </select>
+              {lookups.llmOutputTypes.length === 0 && (
+                <p className="text-yellow-400 text-xs mt-1">No output types available</p>
+              )}
             </div>
 
             <div>
