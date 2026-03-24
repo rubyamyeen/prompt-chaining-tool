@@ -20,7 +20,7 @@ interface Lookups {
   humorFlavorStepTypes: LookupOption[];
 }
 
-interface StepWithRelations {
+interface HumorFlavorStep {
   id: number;
   humor_flavor_id: number;
   order_by: number;
@@ -32,10 +32,6 @@ interface StepWithRelations {
   llm_system_prompt: string | null;
   llm_user_prompt: string | null;
   description: string | null;
-  llm_models: { id: number; name: string } | null;
-  llm_input_types: { id: number; name: string } | null;
-  llm_output_types: { id: number; name: string } | null;
-  humor_flavor_step_types: { id: number; name: string } | null;
 }
 
 export default async function FlavorDetailPage({ params }: PageProps) {
@@ -57,7 +53,7 @@ export default async function FlavorDetailPage({ params }: PageProps) {
   }
 
   let flavor: { id: number; slug: string; description: string | null } | null = null;
-  let steps: StepWithRelations[] = [];
+  let steps: HumorFlavorStep[] = [];
   let lookups: Lookups = {
     llmModels: [],
     llmInputTypes: [],
@@ -85,16 +81,10 @@ export default async function FlavorDetailPage({ params }: PageProps) {
     } else {
       flavor = flavorData;
 
-      // Fetch steps with related data
+      // Fetch steps (without joins - lookups fetched separately)
       const { data: stepsData, error: stepsError } = await supabase
         .from("humor_flavor_steps")
-        .select(`
-          *,
-          llm_models(id, name),
-          llm_input_types(id, name),
-          llm_output_types(id, name),
-          humor_flavor_step_types(id, name)
-        `)
+        .select("*")
         .eq("humor_flavor_id", flavorId)
         .order("order_by", { ascending: true });
 
@@ -102,7 +92,7 @@ export default async function FlavorDetailPage({ params }: PageProps) {
         console.error("[FlavorDetailPage] Steps query error:", JSON.stringify(stepsError, null, 2));
         stepsErrorMessage = stepsError.message;
       } else {
-        steps = (stepsData as StepWithRelations[]) ?? [];
+        steps = (stepsData as HumorFlavorStep[]) ?? [];
       }
 
       // Fetch lookup data

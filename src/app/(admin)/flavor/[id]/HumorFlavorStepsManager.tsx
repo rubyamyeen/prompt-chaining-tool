@@ -9,7 +9,7 @@ import {
   type HumorFlavorStepFormData,
 } from "@/lib/actions/humor-flavor-steps";
 
-interface StepWithRelations {
+interface HumorFlavorStep {
   id: number;
   humor_flavor_id: number;
   order_by: number;
@@ -21,10 +21,6 @@ interface StepWithRelations {
   llm_system_prompt: string | null;
   llm_user_prompt: string | null;
   description: string | null;
-  llm_models: { id: number; name: string } | null;
-  llm_input_types: { id: number; name: string } | null;
-  llm_output_types: { id: number; name: string } | null;
-  humor_flavor_step_types: { id: number; name: string } | null;
 }
 
 interface LookupOption {
@@ -41,7 +37,7 @@ interface Lookups {
 
 interface Props {
   humorFlavorId: number;
-  initialSteps: StepWithRelations[];
+  initialSteps: HumorFlavorStep[];
   lookups: Lookups;
 }
 
@@ -61,13 +57,19 @@ export default function HumorFlavorStepsManager({
   initialSteps,
   lookups,
 }: Props) {
-  const [steps, setSteps] = useState<StepWithRelations[]>(initialSteps);
+  const [steps, setSteps] = useState<HumorFlavorStep[]>(initialSteps);
   const [isCreating, setIsCreating] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [formData, setFormData] = useState(emptyFormData);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Helper functions to look up names from lookups
+  const getModelName = (id: number) => lookups.llmModels.find(m => m.id === id)?.name ?? `Model #${id}`;
+  const getInputTypeName = (id: number) => lookups.llmInputTypes.find(t => t.id === id)?.name ?? `Input #${id}`;
+  const getOutputTypeName = (id: number) => lookups.llmOutputTypes.find(t => t.id === id)?.name ?? `Output #${id}`;
+  const getStepTypeName = (id: number) => lookups.humorFlavorStepTypes.find(t => t.id === id)?.name ?? `Step Type #${id}`;
 
   const resetForm = () => {
     setFormData(emptyFormData);
@@ -96,7 +98,6 @@ export default function HumorFlavorStepsManager({
     if (result.error) {
       setError(result.error);
     } else if (result.data) {
-      // Refetch to get the relations
       window.location.reload();
     }
 
@@ -182,7 +183,7 @@ export default function HumorFlavorStepsManager({
     setLoading(false);
   };
 
-  const startEdit = (step: StepWithRelations) => {
+  const startEdit = (step: HumorFlavorStep) => {
     setEditingId(step.id);
     setFormData({
       llm_temperature: step.llm_temperature,
@@ -201,8 +202,8 @@ export default function HumorFlavorStepsManager({
   return (
     <div className="space-y-4">
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg p-4">
-          <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+        <div className="bg-red-900/30 border border-red-800 rounded-lg p-4">
+          <p className="text-red-400 text-sm">{error}</p>
         </div>
       )}
 
@@ -211,7 +212,7 @@ export default function HumorFlavorStepsManager({
         {steps.map((step, index) => (
           <div
             key={step.id}
-            className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700"
+            className="bg-gray-800 rounded-lg shadow border border-gray-700"
           >
             {/* Step header */}
             <div className="flex items-center gap-3 p-4">
@@ -220,7 +221,7 @@ export default function HumorFlavorStepsManager({
                 <button
                   onClick={() => handleMoveUp(index)}
                   disabled={index === 0 || loading}
-                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+                  className="p-1 text-gray-400 hover:text-gray-300 disabled:opacity-30"
                   title="Move up"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -230,7 +231,7 @@ export default function HumorFlavorStepsManager({
                 <button
                   onClick={() => handleMoveDown(index)}
                   disabled={index === steps.length - 1 || loading}
-                  className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30"
+                  className="p-1 text-gray-400 hover:text-gray-300 disabled:opacity-30"
                   title="Move down"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,22 +241,22 @@ export default function HumorFlavorStepsManager({
               </div>
 
               {/* Step number */}
-              <div className="w-8 h-8 flex items-center justify-center bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-full text-sm font-medium">
+              <div className="w-8 h-8 flex items-center justify-center bg-blue-900/30 text-blue-400 rounded-full text-sm font-medium">
                 {index + 1}
               </div>
 
               {/* Step info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {step.humor_flavor_step_types?.name ?? "Unknown type"}
+                  <span className="text-sm font-medium text-white">
+                    {getStepTypeName(step.humor_flavor_step_type_id)}
                   </span>
-                  <span className="text-xs px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded">
-                    {step.llm_models?.name ?? "Unknown model"}
+                  <span className="text-xs px-2 py-0.5 bg-gray-700 text-gray-400 rounded">
+                    {getModelName(step.llm_model_id)}
                   </span>
                 </div>
                 {step.description && (
-                  <p className="text-sm text-gray-500 dark:text-gray-400 truncate mt-1">
+                  <p className="text-sm text-gray-400 truncate mt-1">
                     {step.description}
                   </p>
                 )}
@@ -265,7 +266,7 @@ export default function HumorFlavorStepsManager({
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setExpandedId(expandedId === step.id ? null : step.id)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="p-2 text-gray-400 hover:text-gray-300"
                   title={expandedId === step.id ? "Collapse" : "Expand"}
                 >
                   <svg
@@ -280,14 +281,14 @@ export default function HumorFlavorStepsManager({
                 <button
                   onClick={() => startEdit(step)}
                   disabled={loading}
-                  className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
+                  className="px-3 py-1 text-sm bg-gray-700 text-gray-200 rounded hover:bg-gray-600 disabled:opacity-50"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(step.id)}
                   disabled={loading}
-                  className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 disabled:opacity-50"
+                  className="px-3 py-1 text-sm bg-red-900/30 text-red-400 rounded hover:bg-red-900/50 disabled:opacity-50"
                 >
                   Delete
                 </button>
@@ -296,37 +297,37 @@ export default function HumorFlavorStepsManager({
 
             {/* Expanded details */}
             {expandedId === step.id && (
-              <div className="px-4 pb-4 pt-0 border-t border-gray-200 dark:border-gray-700 mt-2">
+              <div className="px-4 pb-4 pt-0 border-t border-gray-700 mt-2">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 text-sm">
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Input Type:</span>
-                    <p className="text-gray-900 dark:text-white">{step.llm_input_types?.name ?? "—"}</p>
+                    <span className="text-gray-400">Input Type:</span>
+                    <p className="text-white">{getInputTypeName(step.llm_input_type_id)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Output Type:</span>
-                    <p className="text-gray-900 dark:text-white">{step.llm_output_types?.name ?? "—"}</p>
+                    <span className="text-gray-400">Output Type:</span>
+                    <p className="text-white">{getOutputTypeName(step.llm_output_type_id)}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Temperature:</span>
-                    <p className="text-gray-900 dark:text-white">{step.llm_temperature ?? "Default"}</p>
+                    <span className="text-gray-400">Temperature:</span>
+                    <p className="text-white">{step.llm_temperature ?? "Default"}</p>
                   </div>
                   <div>
-                    <span className="text-gray-500 dark:text-gray-400">Order:</span>
-                    <p className="text-gray-900 dark:text-white">{step.order_by}</p>
+                    <span className="text-gray-400">Order:</span>
+                    <p className="text-white">{step.order_by}</p>
                   </div>
                 </div>
                 {step.llm_system_prompt && (
                   <div className="mt-4">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">System Prompt:</span>
-                    <pre className="mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto">
+                    <span className="text-sm text-gray-400">System Prompt:</span>
+                    <pre className="mt-1 p-3 bg-gray-900 rounded text-sm text-gray-200 whitespace-pre-wrap overflow-x-auto">
                       {step.llm_system_prompt}
                     </pre>
                   </div>
                 )}
                 {step.llm_user_prompt && (
                   <div className="mt-4">
-                    <span className="text-sm text-gray-500 dark:text-gray-400">User Prompt:</span>
-                    <pre className="mt-1 p-3 bg-gray-50 dark:bg-gray-900 rounded text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap overflow-x-auto">
+                    <span className="text-sm text-gray-400">User Prompt:</span>
+                    <pre className="mt-1 p-3 bg-gray-900 rounded text-sm text-gray-200 whitespace-pre-wrap overflow-x-auto">
                       {step.llm_user_prompt}
                     </pre>
                   </div>
@@ -339,20 +340,20 @@ export default function HumorFlavorStepsManager({
 
       {/* Edit/Create form */}
       {(isCreating || editingId !== null) && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-blue-200 dark:border-blue-800 p-4">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+        <div className="bg-gray-800 rounded-lg shadow border border-blue-800 p-4">
+          <h3 className="text-lg font-medium text-white mb-4">
             {isCreating ? "Add New Step" : "Edit Step"}
           </h3>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Step Type *
               </label>
               <select
                 value={formData.humor_flavor_step_type_id}
                 onChange={(e) => setFormData({ ...formData, humor_flavor_step_type_id: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
               >
                 <option value={0}>Select step type...</option>
                 {lookups.humorFlavorStepTypes.map((t) => (
@@ -362,13 +363,13 @@ export default function HumorFlavorStepsManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 LLM Model *
               </label>
               <select
                 value={formData.llm_model_id}
                 onChange={(e) => setFormData({ ...formData, llm_model_id: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
               >
                 <option value={0}>Select model...</option>
                 {lookups.llmModels.map((m) => (
@@ -378,13 +379,13 @@ export default function HumorFlavorStepsManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Input Type *
               </label>
               <select
                 value={formData.llm_input_type_id}
                 onChange={(e) => setFormData({ ...formData, llm_input_type_id: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
               >
                 <option value={0}>Select input type...</option>
                 {lookups.llmInputTypes.map((t) => (
@@ -394,13 +395,13 @@ export default function HumorFlavorStepsManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Output Type *
               </label>
               <select
                 value={formData.llm_output_type_id}
                 onChange={(e) => setFormData({ ...formData, llm_output_type_id: parseInt(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
               >
                 <option value={0}>Select output type...</option>
                 {lookups.llmOutputTypes.map((t) => (
@@ -410,7 +411,7 @@ export default function HumorFlavorStepsManager({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Temperature
               </label>
               <input
@@ -424,12 +425,12 @@ export default function HumorFlavorStepsManager({
                   llm_temperature: e.target.value ? parseFloat(e.target.value) : null
                 })}
                 placeholder="Default"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 Description
               </label>
               <input
@@ -437,12 +438,12 @@ export default function HumorFlavorStepsManager({
                 value={formData.description ?? ""}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Optional description"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 System Prompt
               </label>
               <textarea
@@ -450,12 +451,12 @@ export default function HumorFlavorStepsManager({
                 onChange={(e) => setFormData({ ...formData, llm_system_prompt: e.target.value })}
                 rows={4}
                 placeholder="System prompt..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white font-mono text-sm"
               />
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-300 mb-1">
                 User Prompt
               </label>
               <textarea
@@ -463,7 +464,7 @@ export default function HumorFlavorStepsManager({
                 onChange={(e) => setFormData({ ...formData, llm_user_prompt: e.target.value })}
                 rows={4}
                 placeholder="User prompt..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono text-sm"
+                className="w-full px-3 py-2 border border-gray-600 rounded-lg bg-gray-700 text-white font-mono text-sm"
               />
             </div>
           </div>
@@ -489,7 +490,7 @@ export default function HumorFlavorStepsManager({
             <button
               onClick={resetForm}
               disabled={loading}
-              className="px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
+              className="px-4 py-2 bg-gray-600 text-gray-200 rounded-lg hover:bg-gray-500 disabled:opacity-50"
             >
               Cancel
             </button>
@@ -504,7 +505,7 @@ export default function HumorFlavorStepsManager({
             setIsCreating(true);
             setFormData(emptyFormData);
           }}
-          className="w-full py-3 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-gray-500 dark:text-gray-400 hover:border-blue-400 hover:text-blue-500 dark:hover:border-blue-500 dark:hover:text-blue-400 transition-colors"
+          className="w-full py-3 border-2 border-dashed border-gray-600 rounded-lg text-gray-400 hover:border-blue-500 hover:text-blue-400 transition-colors"
         >
           + Add Step
         </button>
