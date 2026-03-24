@@ -99,6 +99,7 @@ export default function CaptionTester({ flavors, images }: Props) {
             <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-96 overflow-y-auto">
               {images.map((image) => (
                 <button
+                  type="button"
                   key={image.id}
                   onClick={() => setSelectedImageId(image.id)}
                   className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
@@ -157,9 +158,10 @@ export default function CaptionTester({ flavors, images }: Props) {
 
         {/* Generate Button */}
         <button
+          type="button"
           onClick={handleGenerate}
           disabled={loading || !selectedImageId || !selectedFlavorId}
-          className="w-full py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+          className="w-full py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

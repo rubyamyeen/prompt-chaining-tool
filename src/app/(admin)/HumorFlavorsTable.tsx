@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import {
   createHumorFlavor,
@@ -25,14 +25,14 @@ export default function HumorFlavorsTable({ initialData }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData({ slug: "", description: "" });
     setIsCreating(false);
     setEditingId(null);
     setError(null);
-  };
+  }, []);
 
-  const handleCreate = async () => {
+  const handleCreate = useCallback(async () => {
     if (!formData.slug.trim()) {
       setError("Slug is required");
       return;
@@ -46,14 +46,14 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     if (result.error) {
       setError(result.error);
     } else if (result.data) {
-      setFlavors([...flavors, result.data as HumorFlavor]);
+      setFlavors(prev => [...prev, result.data as HumorFlavor]);
       resetForm();
     }
 
     setLoading(false);
-  };
+  }, [formData, resetForm]);
 
-  const handleUpdate = async (id: number) => {
+  const handleUpdate = useCallback(async (id: number) => {
     if (!formData.slug.trim()) {
       setError("Slug is required");
       return;
@@ -67,31 +67,31 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     if (result.error) {
       setError(result.error);
     } else if (result.data) {
-      setFlavors(flavors.map(f => f.id === id ? result.data as HumorFlavor : f));
+      setFlavors(prev => prev.map(f => f.id === id ? result.data as HumorFlavor : f));
       resetForm();
     }
 
     setLoading(false);
-  };
+  }, [formData, resetForm]);
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to delete this flavor and all its steps?")) {
-      return;
-    }
+  const handleDelete = useCallback(async (id: number) => {
+    if (!confirm("Delete this flavor and all its steps?")) return;
 
     setLoading(true);
+    setError(null);
+
     const result = await deleteHumorFlavor(id);
 
     if (result.error) {
       setError(result.error);
     } else {
-      setFlavors(flavors.filter(f => f.id !== id));
+      setFlavors(prev => prev.filter(f => f.id !== id));
     }
 
     setLoading(false);
-  };
+  }, []);
 
-  const startEdit = (flavor: HumorFlavor) => {
+  const startEdit = useCallback((flavor: HumorFlavor) => {
     setEditingId(flavor.id);
     setFormData({
       slug: flavor.slug,
@@ -99,117 +99,132 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     });
     setIsCreating(false);
     setError(null);
-  };
+  }, []);
+
+  const startCreate = useCallback(() => {
+    setIsCreating(true);
+    setEditingId(null);
+    setFormData({ slug: "", description: "" });
+    setError(null);
+  }, []);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
+    <div className="bg-gray-800 rounded-lg border border-gray-700 overflow-hidden">
       {error && (
-        <div className="p-4 bg-red-50 dark:bg-red-900/30 border-b border-red-200 dark:border-red-800">
-          <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
+        <div className="px-4 py-2 bg-red-900/40 border-b border-red-700">
+          <p className="text-red-300 text-sm">{error}</p>
         </div>
       )}
 
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+            <tr className="border-b border-gray-700 bg-gray-800/50">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 ID
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Slug
               </th>
-              <th className="px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-2 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Description
               </th>
-              <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+              <th className="px-4 py-2 text-right text-xs font-medium text-gray-400 uppercase tracking-wider">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-gray-700/50">
             {flavors.map((flavor) => (
               <tr
                 key={flavor.id}
-                className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                className="hover:bg-gray-700/30"
               >
                 {editingId === flavor.id ? (
                   <>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-2 text-sm text-gray-300">
                       {flavor.id}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2">
                       <input
                         type="text"
                         value={formData.slug}
                         onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                         placeholder="slug"
                       />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-2">
                       <input
                         type="text"
                         value={formData.description ?? ""}
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                         placeholder="Description (optional)"
                       />
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <button
-                        onClick={() => handleUpdate(flavor.id)}
-                        disabled={loading}
-                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={resetForm}
-                        disabled={loading}
-                        className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
-                      >
-                        Cancel
-                      </button>
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleUpdate(flavor.id)}
+                          disabled={loading}
+                          className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          onClick={resetForm}
+                          disabled={loading}
+                          className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
                     </td>
                   </>
                 ) : (
                   <>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-2 text-sm text-gray-400">
                       {flavor.id}
                     </td>
-                    <td className="px-4 py-3 text-sm">
+                    <td className="px-4 py-2 text-sm">
                       <Link
                         href={`/flavor/${flavor.id}`}
-                        className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
+                        className="text-blue-400 hover:text-blue-300 font-medium"
                       >
                         {flavor.slug}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-2 text-sm text-gray-400">
                       {flavor.description || "—"}
                     </td>
-                    <td className="px-4 py-3 text-right space-x-2">
-                      <Link
-                        href={`/flavor/${flavor.id}`}
-                        className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 inline-block"
-                      >
-                        Steps
-                      </Link>
-                      <button
-                        onClick={() => startEdit(flavor)}
-                        disabled={loading}
-                        className="px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-200 dark:hover:bg-gray-600 disabled:opacity-50"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(flavor.id)}
-                        disabled={loading}
-                        className="px-3 py-1 text-sm bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 disabled:opacity-50"
-                      >
-                        Delete
-                      </button>
+                    <td className="px-4 py-2 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <Link
+                          href={`/flavor/${flavor.id}`}
+                          className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded"
+                        >
+                          Steps
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(flavor)}
+                          disabled={loading}
+                          className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded disabled:opacity-50"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(flavor.id)}
+                          disabled={loading}
+                          className="px-2 py-1 text-xs font-medium text-red-400 hover:text-red-300 hover:bg-red-900/30 rounded disabled:opacity-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </>
                 )}
@@ -218,44 +233,57 @@ export default function HumorFlavorsTable({ initialData }: Props) {
 
             {/* Create new row */}
             {isCreating && (
-              <tr className="border-b border-gray-100 dark:border-gray-700/50 bg-blue-50/50 dark:bg-blue-900/20">
-                <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
+              <tr className="bg-blue-900/20">
+                <td className="px-4 py-2 text-sm text-gray-400">
                   New
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-2">
                   <input
                     type="text"
                     value={formData.slug}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                     placeholder="slug"
                     autoFocus
                   />
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-2">
                   <input
                     type="text"
                     value={formData.description ?? ""}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className="w-full px-2 py-1 text-sm border border-gray-600 rounded bg-gray-700 text-white focus:border-blue-500 focus:outline-none"
                     placeholder="Description (optional)"
                   />
                 </td>
-                <td className="px-4 py-3 text-right space-x-2">
-                  <button
-                    onClick={handleCreate}
-                    disabled={loading}
-                    className="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
-                  >
-                    Create
-                  </button>
-                  <button
-                    onClick={resetForm}
-                    disabled={loading}
-                    className="px-3 py-1 text-sm bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-300 dark:hover:bg-gray-500 disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
+                <td className="px-4 py-2 text-right">
+                  <div className="flex items-center justify-end gap-1">
+                    <button
+                      type="button"
+                      onClick={handleCreate}
+                      disabled={loading}
+                      className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50"
+                    >
+                      Create
+                    </button>
+                    <button
+                      type="button"
+                      onClick={resetForm}
+                      disabled={loading}
+                      className="px-2 py-1 text-xs font-medium text-gray-300 hover:text-white hover:bg-gray-700 rounded disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            )}
+
+            {/* Empty state */}
+            {flavors.length === 0 && !isCreating && (
+              <tr>
+                <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                  No humor flavors yet. Click &quot;Add Flavor&quot; to create one.
                 </td>
               </tr>
             )}
@@ -265,15 +293,13 @@ export default function HumorFlavorsTable({ initialData }: Props) {
 
       {/* Add button */}
       {!isCreating && editingId === null && (
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 border-t border-gray-700">
           <button
-            onClick={() => {
-              setIsCreating(true);
-              setFormData({ slug: "", description: "" });
-            }}
-            className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            type="button"
+            onClick={startCreate}
+            className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded hover:bg-blue-500"
           >
-            Add Humor Flavor
+            Add Flavor
           </button>
         </div>
       )}
