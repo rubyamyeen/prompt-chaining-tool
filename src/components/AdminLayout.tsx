@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "./ThemeToggle";
 import { createClient } from "@/lib/supabase/client";
 
 interface AdminLayoutProps {
@@ -11,20 +10,31 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
-  const pathname = usePathname();
+  // Wrap in try/catch to prevent crashes
+  let pathname = "/";
+  try {
+    pathname = usePathname();
+  } catch (err) {
+    console.error("[AdminLayout] usePathname error:", err);
+  }
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    window.location.href = "/login";
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    } catch (err) {
+      console.error("[AdminLayout] Sign out error:", err);
+      window.location.href = "/login";
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar */}
-      <aside className="fixed inset-y-0 left-0 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+    <div className="min-h-screen bg-gray-900">
+      {/* Sidebar - simplified, no ThemeToggle for now */}
+      <aside className="fixed inset-y-0 left-0 w-64 bg-gray-800 border-r border-gray-700 flex flex-col">
         <div className="p-4">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Prompt Chain Tool</h1>
+          <h1 className="text-xl font-bold text-white">Prompt Chain Tool</h1>
         </div>
 
         <nav className="flex-1 px-3 space-y-1">
@@ -32,8 +42,8 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
             href="/"
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               pathname === "/"
-                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-blue-900/30 text-blue-400"
+                : "text-gray-300 hover:bg-gray-700"
             }`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -45,8 +55,8 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
             href="/test"
             className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
               pathname === "/test"
-                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
-                : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                ? "bg-blue-900/30 text-blue-400"
+                : "text-gray-300 hover:bg-gray-700"
             }`}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,15 +66,14 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
           </Link>
         </nav>
 
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 space-y-4">
-          <ThemeToggle />
+        <div className="p-4 border-t border-gray-700">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-gray-600 dark:text-gray-400 truncate flex-1 mr-2">
+            <p className="text-sm text-gray-400 truncate flex-1 mr-2">
               {userEmail}
             </p>
             <button
               onClick={handleSignOut}
-              className="text-sm text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+              className="text-sm text-gray-400 hover:text-red-400"
               title="Sign out"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
