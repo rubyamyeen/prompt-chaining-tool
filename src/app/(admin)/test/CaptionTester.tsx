@@ -27,6 +27,24 @@ interface Props {
   images: ImageOption[];
 }
 
+// Check if output type is compatible with input type by semantic meaning
+// This mirrors the server-side logic in caption-generation.ts
+function isTypeCompatible(outputName: string, inputName: string): boolean {
+  const out = outputName.toLowerCase();
+  const inp = inputName.toLowerCase();
+
+  // Exact match
+  if (out === inp) return true;
+
+  // String output is compatible with text-based inputs
+  if (out === "string" && (inp.includes("text") || inp === "string")) return true;
+
+  // Array types are compatible with each other
+  if (out === "array" && inp.includes("array")) return true;
+
+  return false;
+}
+
 function StepChainDebug({ steps, warnings }: { steps?: StepDebugInfo[]; warnings?: FlavorWarning[] }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -114,9 +132,14 @@ function StepChainDebug({ steps, warnings }: { steps?: StepDebugInfo[]; warnings
           {/* Steps Table */}
           {steps && steps.length > 0 && (
             <div className="space-y-3">
-              <h4 className="text-[10px] font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider">
-                Step Chain
-              </h4>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-[10px] font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider">
+                  Step Chain
+                </h4>
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 italic">
+                  String → Text compatible
+                </span>
+              </div>
               <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-white/[0.06]">
                 <table className="w-full text-xs">
                   <thead>
@@ -149,8 +172,8 @@ function StepChainDebug({ steps, warnings }: { steps?: StepDebugInfo[]; warnings
                         <td className="py-2.5 px-3 text-gray-700 dark:text-gray-300">{step.inputType}</td>
                         <td className="py-2.5 px-3 text-gray-700 dark:text-gray-300">
                           {step.outputType}
-                          {i < steps.length - 1 && steps[i + 1]?.inputType !== step.outputType && (
-                            <span className="ml-1.5 text-amber-500 dark:text-amber-400" title="Type mismatch with next step">
+                          {i < steps.length - 1 && !isTypeCompatible(step.outputType, steps[i + 1]?.inputType ?? "") && (
+                            <span className="ml-1.5 text-amber-500 dark:text-amber-400" title="Type may not be compatible with next step">
                               ⚠
                             </span>
                           )}

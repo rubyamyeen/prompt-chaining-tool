@@ -448,7 +448,7 @@ export default function HumorFlavorStepsManager({
               <h4 className="text-[10px] font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-3">
                 Step Configuration
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Step Type *</label>
                   <select
@@ -538,7 +538,7 @@ export default function HumorFlavorStepsManager({
               <h4 className="text-[10px] font-semibold text-gray-500 dark:text-gray-500 uppercase tracking-wider mb-3">
                 Advanced
               </h4>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1.5">Temperature</label>
                   <input
@@ -569,7 +569,7 @@ export default function HumorFlavorStepsManager({
             </section>
 
             {/* Form actions */}
-            <div className="flex items-center gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.06]">
+            <div className="flex flex-wrap items-center gap-3 pt-4 border-t border-gray-100 dark:border-white/[0.06]">
               {isCreating ? (
                 <button
                   type="button"
@@ -577,7 +577,7 @@ export default function HumorFlavorStepsManager({
                   disabled={loading}
                   className="px-5 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-lg hover:from-violet-600 hover:to-indigo-600 shadow-sm shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {loading ? "Creating..." : "Create Step"}
+                  {loading ? "Creating..." : "Create"}
                 </button>
               ) : (
                 <button
@@ -586,7 +586,7 @@ export default function HumorFlavorStepsManager({
                   disabled={loading}
                   className="px-5 py-2 text-sm font-medium bg-gradient-to-r from-violet-500 to-indigo-500 text-white rounded-lg hover:from-violet-600 hover:to-indigo-600 shadow-sm shadow-violet-500/25 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                 >
-                  {loading ? "Saving..." : "Save Changes"}
+                  {loading ? "Saving..." : "Save"}
                 </button>
               )}
               <button

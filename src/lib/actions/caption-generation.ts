@@ -324,15 +324,37 @@ async function fetchAndValidateSteps(
     }
 
     // Check for input/output type chain compatibility
+    // Note: Input and output types are in DIFFERENT tables, so we compare by semantic meaning, not ID.
+    // Compatible pairs:
+    //   - Output "String" is compatible with Input "Text only input" (both represent plain text)
+    //   - Output "Array" is compatible with Input "Array"
+    //   - Exact name matches are always compatible
+    const isTypeCompatible = (outputName: string, inputName: string): boolean => {
+      const out = outputName.toLowerCase();
+      const inp = inputName.toLowerCase();
+
+      // Exact match
+      if (out === inp) return true;
+
+      // String output is compatible with text-based inputs
+      if (out === "string" && (inp.includes("text") || inp === "string")) return true;
+
+      // Array types are compatible with each other
+      if (out === "array" && inp.includes("array")) return true;
+
+      return false;
+    };
+
     for (let i = 1; i < stepsData.length; i++) {
       const prevStep = stepsData[i - 1];
       const currStep = stepsData[i];
-      if (prevStep.llm_output_type_id !== currStep.llm_input_type_id) {
-        const prevOutput = getOutputTypeName(prevStep.llm_output_type_id);
-        const currInput = getInputTypeName(currStep.llm_input_type_id);
+      const prevOutput = getOutputTypeName(prevStep.llm_output_type_id);
+      const currInput = getInputTypeName(currStep.llm_input_type_id);
+
+      if (!isTypeCompatible(prevOutput, currInput)) {
         warnings.push({
           type: "warning",
-          message: `Step ${i} output (${prevOutput}) doesn't match Step ${i + 1} input (${currInput})`,
+          message: `Step ${i} output (${prevOutput}) may not be compatible with Step ${i + 1} input (${currInput})`,
         });
       }
     }

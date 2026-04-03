@@ -192,7 +192,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                     />
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     type="button"
                     onClick={() => handleUpdate(flavor.id)}
@@ -201,7 +201,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                       rounded-xl shadow-sm hover:shadow-md hover:shadow-violet-500/25
                       disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
-                    {loading ? "Saving..." : "Save Changes"}
+                    {loading ? "Saving..." : "Save"}
                   </button>
                   <button
                     type="button"
@@ -323,7 +323,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={handleCreate}
@@ -332,7 +332,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   rounded-xl shadow-sm hover:shadow-md hover:shadow-violet-500/25
                   disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                {loading ? "Creating..." : "Create Flavor"}
+                {loading ? "Creating..." : "Create"}
               </button>
               <button
                 type="button"
