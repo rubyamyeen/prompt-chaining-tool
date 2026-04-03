@@ -149,7 +149,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
             key={flavor.id}
             className="group relative bg-white dark:bg-[#1a1f2e]/80 rounded-2xl border border-gray-200/80 dark:border-white/[0.06]
               shadow-sm hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-violet-500/5
-              transition-all duration-300 ease-out"
+              transition-all duration-300 ease-out overflow-hidden"
           >
             {editingId === flavor.id ? (
               /* Edit Mode */
@@ -216,7 +216,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
               </div>
             ) : (
               /* View Mode - Compact */
-              <div className="flex items-center gap-3 px-3 py-2.5">
+              <div className="flex items-center gap-3 px-3 py-2.5 overflow-hidden">
                 {/* ID Badge */}
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500/10 to-indigo-500/10 dark:from-violet-500/20 dark:to-indigo-500/20
                   flex items-center justify-center text-violet-600 dark:text-violet-400 text-xs font-bold flex-shrink-0">
@@ -224,10 +224,10 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <Link
                     href={`/flavor/${flavor.id}`}
-                    className="text-sm font-semibold text-gray-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
+                    className="block text-sm font-semibold text-gray-900 dark:text-white hover:text-violet-600 dark:hover:text-violet-400 transition-colors truncate"
                   >
                     {flavor.slug}
                   </Link>

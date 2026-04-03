@@ -87,7 +87,7 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
   ];
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen overflow-x-hidden">
       {/* Sidebar */}
       <aside className="fixed inset-y-0 left-0 w-64 flex flex-col z-50">
         {/* Sidebar Background with Glass Effect */}
@@ -197,7 +197,7 @@ export default function AdminLayout({ children, userEmail }: AdminLayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="ml-64 min-h-screen">
+      <main className="ml-64 min-h-screen overflow-x-hidden">
         <div className="max-w-7xl mx-auto px-8 py-8">
           {children}
         </div>
