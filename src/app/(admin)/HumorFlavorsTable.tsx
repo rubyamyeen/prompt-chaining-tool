@@ -6,6 +6,7 @@ import {
   createHumorFlavor,
   updateHumorFlavor,
   deleteHumorFlavor,
+  duplicateHumorFlavor,
   type HumorFlavorFormData,
 } from "@/lib/actions/humor-flavors";
 import type { HumorFlavor } from "@/types/database";
@@ -22,6 +23,8 @@ export default function HumorFlavorsTable({ initialData }: Props) {
     slug: "",
     description: "",
   });
+  const [duplicatingId, setDuplicatingId] = useState<number | null>(null);
+  const [duplicateSlug, setDuplicateSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -31,6 +34,8 @@ export default function HumorFlavorsTable({ initialData }: Props) {
   function resetForm() {
     setIsCreating(false);
     setEditingId(null);
+    setDuplicatingId(null);
+    setDuplicateSlug("");
     setEditFormData({ slug: "", description: "" });
     setError(null);
   }
@@ -116,13 +121,52 @@ export default function HumorFlavorsTable({ initialData }: Props) {
       description: flavor.description ?? "",
     });
     setIsCreating(false);
+    setDuplicatingId(null);
     setError(null);
   }
 
   function startCreate() {
     setIsCreating(true);
     setEditingId(null);
+    setDuplicatingId(null);
     setError(null);
+  }
+
+  function startDuplicate(flavor: HumorFlavor) {
+    setDuplicatingId(flavor.id);
+    setDuplicateSlug(flavor.slug + "-copy");
+    setIsCreating(false);
+    setEditingId(null);
+    setError(null);
+  }
+
+  async function handleDuplicate(originalId: number) {
+    if (!duplicateSlug.trim()) {
+      setError("Slug is required");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await duplicateHumorFlavor(originalId, duplicateSlug);
+
+      if (result.error) {
+        setError(result.error);
+        // If the flavor was partially created (error copying steps), still add it to the list
+        if (result.data) {
+          setFlavors(prev => [...prev, result.data as HumorFlavor]);
+        }
+      } else if (result.data) {
+        setFlavors(prev => [...prev, result.data as HumorFlavor]);
+        resetForm();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -214,6 +258,58 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                   </button>
                 </div>
               </div>
+            ) : duplicatingId === flavor.id ? (
+              /* Duplicate Mode */
+              <div className="p-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-sm">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                    </svg>
+                  </div>
+                  <div>
+                    <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">Duplicating "{flavor.slug}"</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Enter a unique name for the copy</p>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide">
+                    New Slug
+                  </label>
+                  <input
+                    type="text"
+                    value={duplicateSlug}
+                    onChange={(e) => setDuplicateSlug(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.08]
+                      text-gray-900 dark:text-white text-sm
+                      focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500
+                      transition-all duration-200"
+                    placeholder="new-flavor-name"
+                    autoFocus
+                  />
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDuplicate(flavor.id)}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-emerald-500 to-teal-500
+                      rounded-xl shadow-sm hover:shadow-md hover:shadow-emerald-500/25
+                      disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  >
+                    {loading ? "Duplicating..." : "Duplicate"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    disabled={loading}
+                    className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-gray-400
+                      hover:bg-gray-100 dark:hover:bg-white/[0.04] rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
             ) : (
               /* View Mode - Compact */
               <div className="flex items-center gap-3 px-3 py-2.5 overflow-hidden">
@@ -248,6 +344,18 @@ export default function HumorFlavorsTable({ initialData }: Props) {
                     </svg>
                     Steps
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => startDuplicate(flavor)}
+                    disabled={loading}
+                    className="p-1.5 text-gray-400 hover:text-emerald-500
+                      hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-md transition-colors disabled:opacity-50"
+                    title="Duplicate"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+                    </svg>
+                  </button>
                   <button
                     type="button"
                     onClick={() => startEdit(flavor)}
@@ -376,7 +484,7 @@ export default function HumorFlavorsTable({ initialData }: Props) {
       </div>
 
       {/* Add Button */}
-      {!isCreating && editingId === null && flavors.length > 0 && (
+      {!isCreating && editingId === null && duplicatingId === null && flavors.length > 0 && (
         <button
           type="button"
           onClick={startCreate}
